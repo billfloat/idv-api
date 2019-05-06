@@ -1,0 +1,251 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: SmartPay IDV API
+servers:
+  - url: http://api.smartpay.com/v1
+paths:
+  /identity:
+    post:
+      summary: Create an Identity
+      operationId: createIdentity
+      tags:
+        - identity
+      parameters:
+        - $ref: "#/components/parameters/xApiKey"
+        - $ref: "#/components/parameters/clientId"
+        - $ref: "#/components/parameters/locationId"
+      requestBody:
+        description: Create an Identity
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityRequest'
+      responses:
+        '200':
+          description: The newly created Identity
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/Identity'
+  /identity/search:
+    post:
+      summary: Search for Identities
+      operationId: searchIdentities
+      tags:
+        - identity
+      parameters:
+        - $ref: "#/components/parameters/xApiKey"
+        - $ref: "#/components/parameters/clientId"
+        - $ref: "#/components/parameters/locationId"
+      requestBody:
+        description: Search for Identities - Provide at least one filter data; if none are provided the results array will be empty. All provided filter data will be ANDed.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchIdentitiesRequest'
+      responses:
+        '200':
+          description: List of Identities matching search criteria - No matches returns empty Array
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/SearchIdentitiesResponse'
+  /identity/{id}/verify:
+    post:
+      summary: Verify an Identity
+      operationId: verifyIdentity
+      tags:
+        - identity
+      parameters:
+        - $ref: "#/components/parameters/xApiKey"
+        - $ref: "#/components/parameters/clientId"
+        - $ref: "#/components/parameters/locationId"
+        - $ref: "#/components/parameters/identityId"
+      responses:
+        '200':
+          description: Verified Identity
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '404':
+          description: Requested Identity is not found
+          content:
+            application/json:    
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+
+  /identity/{id}:
+    get:
+      summary: Retrieve an Identity
+      operationId: getIdentity
+      tags:
+        - identity
+      parameters:
+        - $ref: "#/components/parameters/xApiKey"
+        - $ref: "#/components/parameters/clientId"
+        - $ref: "#/components/parameters/locationId"
+        - $ref: "#/components/parameters/identityId"
+      responses:
+        '200':
+          description: Requested Identity
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '404':
+          description: Requested Identity is not found
+          content:
+            application/json:    
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+    delete:
+      summary: Delete a Identity
+      operationId: deleteIdentity
+      tags:
+        - identity
+      parameters:
+        - $ref: "#/components/parameters/xApiKey"
+        - $ref: "#/components/parameters/clientId"
+        - $ref: "#/components/parameters/locationId"
+        - $ref: "#/components/parameters/identityId"
+      responses:
+        '200':
+          description: Deleted Identity
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '404':
+          description: Deleted Identity is not found
+          content:
+            application/json:    
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+
+components:
+  parameters:
+    xApiKey:
+      in: header
+      name: x-api-key
+      description: This will be obtained from the API provider
+      required: true
+      schema:
+        type: string
+    clientId:
+      in: header
+      name: client_id
+      description: Unique Identifier for the Vendor obtained from the API provider
+      required: true
+      schema:
+        type: string
+    locationId:
+      in: header
+      name: location_id
+      description: Unique Identifier for the Vendor Location obtained from the API provider
+      required: true
+      schema:
+        type: string
+    identityId:
+      in: path
+      name: id
+      description: The unique Identity ID
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    IdentityRequest:
+      required:
+        - fist_name
+        - last_name
+        - phone_number
+        - zipcode
+        - date_of_birth
+      properties:
+        fist_name:
+          description: The legal first name of the Identity
+          type: string
+        last_name:
+          description: The legal last name of the Identity
+          type: string
+        phone_number:
+          description: The contact phone number of the Identity
+          type: string
+          pattern: '^\d{3}-\d{3}-\d{4}$'
+        zipcode:
+          description: 5 digit ZIPCode of the Identity
+          type: string
+          pattern: '^\d{5}$'
+        date_of_birth:
+          description: The DOB of the Identity
+          type: string
+          format: date
+    
+    Identity:
+      allOf:
+        - type: object
+          required:
+            - id
+            - verified
+          properties:
+            id:
+              description: The unique ID for a Identity 
+              type: string
+              format: uuid
+            verified:
+              description: True if Identity was successfully Verified, False if not
+              type: boolean
+        - $ref: '#/components/schemas/IdentityRequest'
+    
+    SearchIdentitiesRequest:
+      required:
+        - fist_name
+        - last_name
+        - zipcode
+        - date_of_birth
+      properties:
+        fist_name:
+          description: The legal first name of the Identity
+          type: string
+        last_name:
+          description: The legal last name of the Identity
+          type: string
+        phone_number:
+          description: The contact phone number of the Identity
+          type: string
+          pattern: '^\d{3}-\d{3}-\d{4}$'
+        zipcode:
+          description: 5 digit ZIPCode of the Identity
+          type: string
+          pattern: '^\d{5}$'
+        date_of_birth:
+          description: The DOB of the Identity
+          type: string
+          format: date
+
+    SearchIdentitiesResponse:
+      required:
+        - results
+      properties:
+        results:
+          description: A list of Identities that match the search Criteria
+          type: array
+          items:
+            $ref: "#/components/schemas/Identity"
+
+    ResponseError:
+      required:
+        - error_code
+        - error_description
+      properties:
+        error_code:
+          type: string
+          description: The error code returned whether the API call was successful or not
+        error_description:
+          type: string
+          description: The description of the error code
+
